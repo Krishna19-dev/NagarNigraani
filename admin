@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nagar Nigraani - Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #007BFF;
+        }
+
+        .navbar-subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 400;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #007BFF, #28A745);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .profile-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .logout-btn {
+            background: #007BFF;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: white;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+            padding: 2rem 0;
+        }
+
+        .menu-item {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: #f0f8ff;
+            color: #007BFF;
+            border-left: 4px solid #007BFF;
+        }
+
+        .menu-item.active {
+            background: #e6f3ff;
+            color: #007BFF;
+            border-left: 4px solid #007BFF;
+        }
+
+        .menu-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 2rem;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Complaints Table */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .status-badge {
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-resolved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-review {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .action-btn {
+            background: #28A745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        .action-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Map */
+        #map {
+            height: 600px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        /* Loader */
+        .loader {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007BFF;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader.active {
+            display: block;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 400px;
+            text-align: center;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .modal-text {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .modal-btn-confirm {
+            background: #28A745;
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background: #218838;
+        }
+
+        .modal-btn-cancel {
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #e9ecef;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .navbar {
+                padding: 1rem;
+            }
+
+            .content-area {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div>
+            <div class="navbar-title">🏙️ Nagar Nigraani</div>
+            <div class="navbar-subtitle">Admin Dashboard</div>
+        </div>
+        <div class="navbar-right">
+            <div class="profile-icon">A</div>
+            <button class="logout-btn">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="menu-item active" data-section="dashboard">
+                <span class="menu-icon">📊</span>
+                <span>Dashboard</span>
+            </div>
+            <div class="menu-item" data-section="complaints">
+                <span class="menu-icon">📋</span>
+                <span>Complaints List</span>
+            </div>
+            <div class="menu-item" data-section="map">
+                <span class="menu-icon">🗺️</span>
+                <span>Map View</span>
+            </div>
+            <div class="menu-item" data-section="settings">
+                <span class="menu-icon">⚙️</span>
+                <span>Settings</span>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="content-area">
+            <!-- Dashboard Section -->
+            <section id="dashboard-section">
+                <h2 style="margin-bottom: 1.5rem; font-size: 1.8rem; color: #333;">Dashboard Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon" style="background: #e3f2fd; color: #007BFF;">📝</div>
+                        </div>
+                        <div class="stat-number" style="color: #007BFF;" id="total-complaints">0</div>
+                        <div class="stat-label">Total Complaints</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon" style="background: #fff3cd; color: #856404;">⏳</div>
+                        </div>
+                        <div class="stat-number" style="color: #856404;" id="pending-complaints">0</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon" style="background: #d4edda; color: #28A745;">✅</div>
+                        </div>
+                        <div class="stat-number" style="color: #28A745;" id="resolved-complaints">0</div>
+                        <div class="stat-label">Resolved</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon" style="background: #d1ecf1; color: #0c5460;">🔍</div>
+                        </div>
+                        <div class="stat-number" style="color: #0c5460;" id="review-complaints">0</div>
+                        <div class="stat-label">Under Review</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Complaints Section -->
+            <section id="complaints-section" class="hidden">
+                <div class="loader" id="complaints-loader"></div>
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2 class="table-title">All Complaints</h2>
+                    </div>
+                    <table id="complaints-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Image</th>
+                                <th>Issue Type</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="complaints-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Map Section -->
+            <section id="map-section" class="hidden">
+                <h2 style="margin-bottom: 1.5rem; font-size: 1.8rem; color: #333;">Complaints Map View</h2>
+                <div class="loader" id="map-loader"></div>
+                <div id="map"></div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="hidden">
+                <h2 style="margin-bottom: 1.5rem; font-size: 1.8rem; color: #333;">Settings</h2>
+                <div class="table-container">
+                    <p style="color: #666; line-height: 1.8;">
+                        Configure your dashboard settings, notification preferences, and user management options here.
+                        This section can be expanded with additional administrative controls as needed.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-title">Confirm Action</div>
+            <p class="modal-text">Are you sure you want to mark this complaint as resolved?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" id="cancelBtn">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" id="confirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        // Mock data for demonstration
+        const mockComplaints = [
+            {
+                id: 1,
+                image: 'https://images.unsplash.com/photo-1585159812596-fac104f2e069?w=300',
+                issueType: 'Pothole',
+                latitude: 22.7196,
+                longitude: 75.8577,
+                status: 'Pending'
+            },
+            {
+                id: 2,
+                image: 'https://images.unsplash.com/photo-1572635148818-ef6fd45eb394?w=300',
+                issueType: 'Street Light',
+                latitude: 22.7239,
+                longitude: 75.8612,
+                status: 'Under Review'
+            },
+            {
+                id: 3,
+                image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300',
+                issueType: 'Garbage',
+                latitude: 22.7125,
+                longitude: 75.8735,
+                status: 'Resolved'
+            },
+            {
+                id: 4,
+                image: 'https://images.unsplash.com/photo-1604956070049-53e6f8cf4b1d?w=300',
+                issueType: 'Water Leakage',
+                latitude: 22.7298,
+                longitude: 75.8482,
+                status: 'Pending'
+            },
+            {
+                id: 5,
+                image: 'https://images.unsplash.com/photo-1612796197064-f0e0a3ecf45e?w=300',
+                issueType: 'Road Damage',
+                latitude: 22.7156,
+                longitude: 75.8643,
+                status: 'Under Review'
+            }
+        ];
+
+        let complaints = [...mockComplaints];
+        let map = null;
+        let markers = [];
+        let currentComplaintId = null;
+
+        // Navigation
+        const menuItems = document.querySelectorAll('.menu-item');
+        const sections = {
+            'dashboard': document.getElementById('dashboard-section'),
+            'complaints': document.getElementById('complaints-section'),
+            'map': document.getElementById('map-section'),
+            'settings': document.getElementById('settings-section')
+        };
+
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const section = item.dataset.section;
+                
+                // Update active menu
+                menuItems.forEach(m => m.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Show selected section
+                Object.values(sections).forEach(s => s.classList.add('hidden'));
+                sections[section].classList.remove('hidden');
+                
+                // Load data based on section
+                if (section === 'complaints') {
+                    loadComplaints();
+                } else if (section === 'map') {
+                    loadMap();
+                } else if (section === 'dashboard') {
+                    updateStats();
+                }
+            });
+        });
+
+        // Update dashboard stats
+        function updateStats() {
+            const total = complaints.length;
+            const pending = complaints.filter(c => c.status === 'Pending').length;
+            const resolved = complaints.filter(c => c.status === 'Resolved').length;
+            const review = complaints.filter(c => c.status === 'Under Review').length;
+
+            document.getElementById('total-complaints').textContent = total;
+            document.getElementById('pending-complaints').textContent = pending;
+            document.getElementById('resolved-complaints').textContent = resolved;
+            document.getElementById('review-complaints').textContent = review;
+        }
+
+        // Load complaints table
+        function loadComplaints() {
+            const loader = document.getElementById('complaints-loader');
+            const tbody = document.getElementById('complaints-tbody');
+            
+            loader.classList.add('active');
+            tbody.innerHTML = '';
+
+            // Simulate API call
+            setTimeout(() => {
+                complaints.forEach(complaint => {
+                    const row = createComplaintRow(complaint);
+                    tbody.appendChild(row);
+                });
+                loader.classList.remove('active');
+            }, 500);
+        }
+
+        function createComplaintRow(complaint) {
+            const row = document.createElement('tr');
+            
+            const statusClass = complaint.status === 'Pending' ? 'status-pending' :
+                               complaint.status === 'Resolved' ? 'status-resolved' : 'status-review';
+            
+            row.innerHTML = `
+                <td>#${complaint.id}</td>
+                <td><img src="${complaint.image}" alt="Issue" class="thumbnail"></td>
+                <td>${complaint.issueType}</td>
+                <td>${complaint.latitude.toFixed(4)}, ${complaint.longitude.toFixed(4)}</td>
+                <td><span class="status-badge ${statusClass}">${complaint.status}</span></td>
+                <td>
+                    <button class="action-btn" onclick="showConfirmModal(${complaint.id})" 
+                            ${complaint.status === 'Resolved' ? 'disabled' : ''}>
+                        ${complaint.status === 'Resolved' ? 'Resolved' : 'Mark as Resolved'}
+                    </button>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        // Modal functions
+        function showConfirmModal(id) {
+            currentComplaintId = id;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            document.getElementById('confirmModal').classList.remove('active');
+            currentComplaintId = null;
+        });
+
+        document.getElementById('confirmBtn').addEventListener('click', () => {
+            if (currentComplaintId) {
+                markAsResolved(currentComplaintId);
+            }
+            document.getElementById('confirmModal').classList.remove('active');
+            currentComplaintId = null;
+        });
+
+        // Mark complaint as resolved
+        function markAsResolved(id) {
+            const complaint = complaints.find(c => c.id === id);
+            if (complaint) {
+                complaint.status = 'Resolved';
+                loadComplaints();
+                updateStats();
+                
+                // Update map if visible
+                if (!sections.map.classList.contains('hidden')) {
+                    updateMapMarkers();
+                }
+            }
+        }
+
+        // Load map
+        function loadMap() {
+            const loader = document.getElementById('map-loader');
+            loader.classList.add('active');
+
+            setTimeout(() => {
+                if (!map) {
+                    // Initialize map centered on Indore
+                    map = L.map('map').setView([22.7196, 75.8577], 13);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+                }
+                
+                updateMapMarkers();
+                loader.classList.remove('active');
+            }, 500);
+        }
+
+        function updateMapMarkers() {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            // Add markers for each complaint
+            complaints.forEach(complaint => {
+                const icon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background: ${getMarkerColor(complaint.status)}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
+                    iconSize: [30, 30]
+                });
+
+                const marker = L.marker([complaint.latitude, complaint.longitude], { icon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="font-family: Poppins, sans-serif;">
+                            <img src="${complaint.image}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
+                            <strong style="font-size: 1.1rem;">${complaint.issueType}</strong><br>
+                            <span style="color: #666;">ID: #${complaint.id}</span><br>
+                            <span class="status-badge ${complaint.status === 'Pending' ? 'status-pending' : complaint.status === 'Resolved' ? 'status-resolved' : 'status-review'}" style="display: inline-block; margin-top: 8px;">${complaint.status}</span>
+                        </div>
+                    `);
+
+                markers.push(marker);
+            });
+        }
+
+        function getMarkerColor(status) {
+            switch(status) {
+                case 'Pending': return '#ffc107';
+                case 'Resolved': return '#28A745';
+                case 'Under Review': return '#17a2b8';
+                default: return '#007BFF';
+            }
+        }
+
+        // Logout
+        document.querySelector('.logout-btn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to logout?')) {
+                alert('Logged out successfully!');
+                // In production, redirect to login page
+            }
+        });
+
+        // Initialize dashboard
+        updateStats();
+
+        // Simulate real-time updates (optional)
+        // setInterval(updateStats, 30000); // Update every 30 seconds
+    </script>
+</body>
+</html>
